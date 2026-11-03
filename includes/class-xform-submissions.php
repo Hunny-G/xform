@@ -126,8 +126,14 @@ final class XForm_Submissions {
             return new WP_REST_Response( array( 'ok' => false, 'message' => 'Invalid ID' ), 400 );
         }
         global $wpdb;
-        $updated = $wpdb->update( XForm_DB::table(), array( 'crm_status' => 'delivered' ), array( 'id' => $id ), array( '%s' ), array( '%d' ) );
-        return new WP_REST_Response( array( 'ok' => false !== $updated ), 200 );
+        $updated = $wpdb->update(
+            XForm_DB::table(),
+            array( 'crm_status' => 'delivered' ),
+            array( 'id' => $id, 'crm_status' => 'pending' ),
+            array( '%s' ),
+            array( '%d', '%s' )
+        );
+        return new WP_REST_Response( array( 'ok' => 1 === $updated ), 200 );
     }
     private static function client_ip(): string {
         $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
@@ -159,7 +165,13 @@ final class XForm_Submissions {
             $ok = wp_mail( $form['email'], sprintf( __( 'New submission: %s', 'xform' ), $form['name'] ), $body ) && $ok;
         }
         if ( in_array( $form['destination'], array( 'webhook', 'both' ), true ) ) {
-            $response = wp_remote_post( $form['webhook'], array(
+            if ( ! XForm_Forms::is_valid_webhook_url( (string) $form['webhook'] ) ) {
+                self::set_status( $submission_id, 'failed' );
+                return;
+            }
+            // wp_safe_remote_post rejects URLs that resolve to unsafe/private IP addresses.
+            // Redirects are disabled so a trusted destination cannot redirect the request internally.
+            $response = wp_safe_remote_post( $form['webhook'], array(
                 'timeout' => 8, 'redirection' => 0,
                 'headers' => array( 'Content-Type' => 'application/json' ),
                 'body' => wp_json_encode( array( 'form_id' => $form['id'], 'form_name' => $form['name'], 'submission_id' => $submission_id, 'submitted_at' => $row['created_at'], 'data' => $data ) ),
