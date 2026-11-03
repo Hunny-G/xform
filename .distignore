@@ -1,0 +1,7 @@
+# Development and repository metadata
+.gitattributes
+.distignore
+.github/
+phpunit.xml.dist
+tests/
+README.md
