@@ -1,6 +1,6 @@
 # XForm
 
-XForm is a lightweight WordPress plugin for publishing custom HTML/CSS forms through shortcodes, recording submissions locally, and queueing email/webhook delivery.
+XForm is a lightweight WordPress plugin for publishing custom HTML/CSS forms through shortcodes, recording submissions locally, and queueing email/webhook delivery. Existing features, including Divit CRM sync, are part of the free edition.
 
 ## Requirements
 
@@ -90,7 +90,7 @@ Open **XForm → Submissions** to view the latest 100 records and use **Export a
 - Use HTTPS on the whole site. Nonces are CSRF mitigation, not authentication or a complete spam solution.
 - The plugin stores the remote IP address as requested. Update your privacy policy and retention practices to comply with applicable privacy law. Consider shortening or anonymizing IP retention where appropriate.
 - WordPress cron is best-effort and not a hard real-time queue. A server cron is recommended for reliable delivery.
-- Webhook URLs must use HTTPS. Restrict webhook destinations to trusted endpoints; outbound HTTP requests can have security implications.
+- Webhook URLs must use HTTPS. Delivery uses WordPress's safe HTTP API, with redirects disabled to reduce server-side request forgery (SSRF) risk. Configure only trusted destinations.
 - The current release does not include retry/backoff controls, CAPTCHA, attachment uploads, conditional logic, or a visual drag-and-drop builder.
 
 ## Developer hooks
@@ -117,8 +117,8 @@ Open **XForm → Submissions** to view the latest 100 records and use **Export a
 The `tests/` directory contains a PHPUnit bootstrap and starter test. To run tests, use the WordPress PHPUnit test suite and configure `WP_TESTS_DIR` for your environment.
 
 
-## Secure Divit CRM sync (XForm 1.1.0)
+## Secure Divit CRM sync (XForm 1.1.1)
 
-Open **XForm → CRM Integration** in WordPress and configure a shared secret of at least 32 characters. Configure the same value as `WORDPRESS_SYNC_TOKEN` in the local CRM `.env` file. The plugin exposes authenticated pending-submission and acknowledgement REST endpoints for the local CRM to poll over HTTPS. The secret is never displayed after saving.
+Open **XForm → CRM Integration** in WordPress and configure a shared secret of at least 32 characters. Configure the same value as `WORDPRESS_SYNC_TOKEN` in the local CRM `.env` file. The plugin exposes authenticated pending-submission and acknowledgement REST endpoints for the local CRM to poll over HTTPS. The secret is never displayed after saving. Acknowledgements now update only records that are still pending.
 
 Public form submissions are protected with a WordPress nonce, a honeypot field, per-form/per-IP transient rate limiting (5 submissions per 10 minutes), server-side sanitization, field/item count limits and a 32 KB request limit. The nonce is not a replacement for rate limiting or bot detection. For high-volume public forms, add a managed challenge such as Cloudflare Turnstile at the edge.
