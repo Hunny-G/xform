@@ -1,0 +1,29 @@
+name: Build WordPress.org upload ZIP
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build clean plugin ZIP
+        shell: bash
+        run: |
+          mkdir -p package/xform
+          rsync -a --exclude-from=.distignore ./ package/xform/
+          cd package
+          zip -r ../xform-wordpress-org.zip xform
+
+      - name: Upload ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: xform-wordpress-org
+          path: xform-wordpress-org.zip
+          if-no-files-found: error
