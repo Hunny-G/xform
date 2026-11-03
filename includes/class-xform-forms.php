@@ -32,7 +32,9 @@ final class XForm_Forms {
         }
         $html = wp_kses( (string) ( $input['html'] ?? '' ), self::allowed_html(), array( 'http', 'https', 'mailto' ) );
         $css = self::clean_css( (string) ( $input['css'] ?? '' ) );
-        if ( '' === trim( wp_strip_all_tags( $html ) ) ) {
+        // A form made entirely of controls (for example, an email-only signup form)
+        // is valid even when stripping HTML leaves no visible text.
+        if ( '' === trim( wp_strip_all_tags( $html ) ) && ! preg_match( '/<(?:input|textarea|select|button)\\b/i', $html ) ) {
             return new WP_Error( 'xform_empty', __( 'Add your form HTML before saving.', 'xform' ) );
         }
         $forms = self::all();
