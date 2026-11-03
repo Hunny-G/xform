@@ -2,14 +2,16 @@
 /**
  * Plugin Name: XForm
  * Description: Lightweight custom HTML/CSS forms with shortcodes, queued delivery and CSV exports.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: XForm
+ * License: GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: xform
  */
 defined( 'ABSPATH' ) || exit;
-define( 'XFORM_VERSION', '1.1.0' );
+define( 'XFORM_VERSION', '1.1.1' );
 define( 'XFORM_FILE', __FILE__ );
 define( 'XFORM_PATH', plugin_dir_path( __FILE__ ) );
 define( 'XFORM_URL', plugin_dir_url( __FILE__ ) );
