@@ -1,6 +1,9 @@
 name: Build WordPress.org upload ZIP
 
 on:
+  push:
+    branches:
+      - xform-wordpress-org-review-fixes
   workflow_dispatch:
 
 permissions:
