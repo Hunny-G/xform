@@ -107,6 +107,8 @@ final class XForm_Admin {
         if ( ! current_user_can( 'manage_options' ) ) { return; }
         global $wpdb;
         $table = XForm_DB::table();
+        // The table name is generated internally from the trusted WordPress database prefix.
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- No user input is used; only the internally generated table identifier is interpolated.
         $rows = $wpdb->get_results( "SELECT id, form_id, delivery_status, crm_status, created_at FROM {$table} ORDER BY id DESC LIMIT 100", ARRAY_A );
         self::header( 'Submissions' );
         echo '<section class="xform-card"><p>Latest 100 submissions. Export downloads all records as UTF-8 CSV.</p><a class="button button-primary" href="' . esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=xform_export' ), 'xform_export' ) ) . '">Export all CSV</a><table class="widefat striped"><thead><tr><th>ID</th><th>Form</th><th>Email / Webhook</th><th>CRM Sync</th><th>Created (UTC)</th></tr></thead><tbody>';
@@ -120,13 +122,16 @@ final class XForm_Admin {
         if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'Forbidden', 403 ); }
         check_admin_referer( 'xform_export' );
         global $wpdb;
-        $rows = $wpdb->get_results( 'SELECT id, form_id, form_data, ip_address, delivery_status, created_at FROM ' . XForm_DB::table() . ' ORDER BY id ASC', ARRAY_A );
+        $table = XForm_DB::table();
+        // The table name is generated internally from the trusted WordPress database prefix.
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- No user input is used; only the internally generated table identifier is interpolated.
+        $rows = $wpdb->get_results( "SELECT id, form_id, form_data, ip_address, delivery_status, created_at FROM {$table} ORDER BY id ASC", ARRAY_A );
         nocache_headers();
         header( 'Content-Type: text/csv; charset=utf-8' );
         header( 'Content-Disposition: attachment; filename=xform-submissions-' . gmdate( 'Y-m-d' ) . '.csv' );
         $out = fopen( 'php://output', 'w' );
         // UTF-8 BOM helps Excel identify UTF-8 text.
-        fwrite( $out, "\xEF\xBB\xBF" );
+        echo "\xEF\xBB\xBF";
         fputcsv( $out, array( 'ID', 'Form ID', 'Form Data JSON', 'IP Address', 'Delivery Status', 'Created At UTC' ) );
         foreach ( $rows as $row ) {
             fputcsv( $out, array_map( static function ( $value ) {
@@ -135,6 +140,6 @@ final class XForm_Admin {
                 return preg_match( '/^[\s]*[=+\-@]/', $value ) ? "'" . $value : $value;
             }, array_values( $row ) ) );
         }
-        fclose( $out ); exit;
+        exit;
     }
 }
