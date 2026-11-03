@@ -27,15 +27,14 @@ final class XForm_Forms {
             return new WP_Error( 'xform_email', __( 'Enter a valid destination email address.', 'xform' ) );
         }
         $webhook = esc_url_raw( $input['webhook'] ?? '' );
-        if ( in_array( $destination, array( 'webhook', 'both' ), true ) ) {
-            $parts = wp_parse_url( $webhook );
-            if ( ! $parts || empty( $parts['host'] ) || ! in_array( strtolower( $parts['scheme'] ?? '' ), array( 'https' ), true ) ) {
-                return new WP_Error( 'xform_webhook', __( 'Webhook URL must be a valid HTTPS URL.', 'xform' ) );
-            }
+        if ( in_array( $destination, array( 'webhook', 'both' ), true ) && ! self::is_valid_webhook_url( $webhook ) ) {
+            return new WP_Error( 'xform_webhook', __( 'Webhook URL must be a valid HTTPS URL without embedded credentials.', 'xform' ) );
         }
         $html = wp_kses( (string) ( $input['html'] ?? '' ), self::allowed_html(), array( 'http', 'https', 'mailto' ) );
         $css = self::clean_css( (string) ( $input['css'] ?? '' ) );
-        if ( '' === trim( wp_strip_all_tags( $html ) ) ) {
+        // A form made entirely of controls (for example, an email-only signup form)
+        // is valid even when stripping HTML leaves no visible text.
+        if ( '' === trim( wp_strip_all_tags( $html ) ) && ! preg_match( '/<(?:input|textarea|select|button)\\b/i', $html ) ) {
             return new WP_Error( 'xform_empty', __( 'Add your form HTML before saving.', 'xform' ) );
         }
         $forms = self::all();
@@ -47,6 +46,19 @@ final class XForm_Forms {
         );
         update_option( 'xform_forms', $forms, false );
         return $forms[ $id ];
+    }
+    /**
+     * Validate the URL shape. The HTTP API performs a second unsafe-URL/IP check at request time.
+     */
+    public static function is_valid_webhook_url( string $url ): bool {
+        $parts = wp_parse_url( $url );
+        if ( ! is_array( $parts ) || empty( $parts['host'] ) || 'https' !== strtolower( $parts['scheme'] ?? '' ) ) {
+            return false;
+        }
+        if ( isset( $parts['user'] ) || isset( $parts['pass'] ) || isset( $parts['fragment'] ) ) {
+            return false;
+        }
+        return (bool) filter_var( $parts['host'], FILTER_VALIDATE_IP ) || (bool) preg_match( '/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i', $parts['host'] );
     }
     private static function allowed_html(): array {
         $allowed = wp_kses_allowed_html( 'post' );

@@ -7,4 +7,13 @@ class Test_XForm_Forms extends WP_UnitTestCase {
         $nonce = wp_create_nonce( 'xform_submit' );
         $this->assertTrue( wp_verify_nonce( $nonce, 'xform_submit' ) > 0 );
     }
+    public function test_webhook_requires_https_and_host(): void {
+        $this->assertTrue( XForm_Forms::is_valid_webhook_url( 'https://hooks.example.com/receive' ) );
+        $this->assertFalse( XForm_Forms::is_valid_webhook_url( 'http://hooks.example.com/receive' ) );
+        $this->assertFalse( XForm_Forms::is_valid_webhook_url( 'https:///missing-host' ) );
+    }
+    public function test_webhook_rejects_embedded_credentials_and_fragments(): void {
+        $this->assertFalse( XForm_Forms::is_valid_webhook_url( 'https://user:pass@hooks.example.com/receive' ) );
+        $this->assertFalse( XForm_Forms::is_valid_webhook_url( 'https://hooks.example.com/receive#fragment' ) );
+    }
 }
