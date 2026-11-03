@@ -162,7 +162,9 @@ final class XForm_Submissions {
         }
         $ok = true;
         if ( in_array( $form['destination'], array( 'email', 'both' ), true ) ) {
-            $ok = wp_mail( $form['email'], sprintf( __( 'New submission: %s', 'xform' ), $form['name'] ), $body ) && $ok;
+            /* translators: %s: The name of the form that received a new submission. */
+            $subject = sprintf( __( 'New submission: %s', 'xform' ), $form['name'] );
+            $ok = wp_mail( $form['email'], $subject, $body ) && $ok;
         }
         if ( in_array( $form['destination'], array( 'webhook', 'both' ), true ) ) {
             if ( ! XForm_Forms::is_valid_webhook_url( (string) $form['webhook'] ) ) {
